@@ -263,37 +263,37 @@ export function ProductModal({
           )}
 
           {/* Customer Reviews */}
-          {product.reviews && product.reviews.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <h3 className="font-semibold text-foreground">
-                  Customer reviews
-                </h3>
-                <div className="space-y-3">
-                  {product.reviews.slice(0, 3).map((review, idx) => (
-                    <div
-                      key={idx}
-                      className="rounded-lg border bg-muted/30 p-3 text-sm"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-foreground">
-                          {review.reviewerName}
-                        </span>
-                        <span className="text-muted-foreground">•</span>
-                        <Rating
-                          rating={review.rating}
-                          showValue={true}
-                          size="sm"
-                        />
-                      </div>
-                      <p className="text-muted-foreground">{review.comment}</p>
+          <Separator />
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">
+              Customer reviews
+            </h3>
+            {product.reviews && product.reviews.length > 0 ? (
+              <div className="space-y-3">
+                {product.reviews.map((review, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-lg border bg-muted/30 p-3 text-sm"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-foreground">
+                        {review.reviewerName}
+                      </span>
+                      <span className="text-muted-foreground">•</span>
+                      <Rating
+                        rating={review.rating}
+                        showValue={true}
+                        size="sm"
+                      />
                     </div>
-                  ))}
-                </div>
+                    <p className="text-muted-foreground">{review.comment}</p>
+                  </div>
+                ))}
               </div>
-            </>
-          )}
+            ) : (
+              <p className="text-sm text-muted-foreground">No reviews available</p>
+            )}
+          </div>
 
           {/* Add to Cart */}
           <div className="flex gap-3 pt-2">

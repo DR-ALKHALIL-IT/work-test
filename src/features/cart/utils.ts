@@ -22,11 +22,16 @@ export function addToCart(productId: number): number[] {
   return items
 }
 
-export function getCartCount(): number {
-  return getCartIds().length
+export function removeFromCart(productId: number): number[] {
+  const items = getCartIds()
+  const index = items.indexOf(productId)
+  if (index === -1) return items
+  const next = [...items.slice(0, index), ...items.slice(index + 1)]
+  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(next))
+  window.dispatchEvent(new CustomEvent('cart-updated'))
+  return next
 }
 
-export function clearCart(): void {
-  localStorage.removeItem(CART_STORAGE_KEY)
-  window.dispatchEvent(new CustomEvent('cart-updated'))
+export function getCartCount(): number {
+  return getCartIds().length
 }

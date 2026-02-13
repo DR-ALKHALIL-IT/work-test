@@ -36,7 +36,7 @@ export function SearchBar({
       </svg>
       <Input
         type="text"
-        value={value}
+        value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="pl-9 pr-9"

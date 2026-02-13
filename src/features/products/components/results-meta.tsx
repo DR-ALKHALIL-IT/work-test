@@ -8,7 +8,10 @@ interface ResultsMetaProps {
 export function ResultsMeta({ total, currentCount, searchQuery, category }: ResultsMetaProps) {
   const getActiveFilter = () => {
     if (searchQuery) return `for "${searchQuery}"`;
-    if (category) return `in ${category}`;
+    if (category) {
+      const name = category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' ');
+      return `in ${name}`;
+    }
     return '';
   };
 

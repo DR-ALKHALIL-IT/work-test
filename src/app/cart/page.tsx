@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { Container } from '@/components/layout/container'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { getCartIds, clearCart } from '@/features/cart/utils'
+import { CartItemRow } from '@/features/cart/components/cart-item-row'
+import { getCartIds } from '@/features/cart/utils'
 
 export default function CartPage() {
   const [itemIds, setItemIds] = useState<number[]>([])
@@ -20,8 +21,8 @@ export default function CartPage() {
     return () => window.removeEventListener('cart-updated', handleCartUpdate)
   }, [])
 
-  const handleClearCart = () => {
-    clearCart()
+  const handleRemoveItem = () => {
+    setItemIds(getCartIds())
   }
 
   return (
@@ -35,15 +36,6 @@ export default function CartPage() {
                 {itemIds.length === 0 ? 'Your cart is empty' : `${itemIds.length} item${itemIds.length === 1 ? '' : 's'} in your cart`}
               </p>
             </div>
-            {itemIds.length > 0 && (
-              <Button 
-                variant="outline" 
-                onClick={handleClearCart}
-                className="sm:self-start"
-              >
-                Clear Cart
-              </Button>
-            )}
           </div>
 
           {itemIds.length === 0 ? (
@@ -83,30 +75,18 @@ export default function CartPage() {
               <CardContent>
                 <div className="space-y-3">
                   {itemIds.map((id, index) => (
-                    <div
+                    <CartItemRow
                       key={`${id}-${index}`}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
-                          <span className="text-sm font-medium text-muted-foreground">#{id}</span>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-foreground">Product ID: {id}</span>
-                          <p className="text-xs text-muted-foreground">Item #{index + 1}</p>
-                        </div>
-                      </div>
-                    </div>
+                      productId={id}
+                      onRemoved={handleRemoveItem}
+                    />
                   ))}
                 </div>
-                <div className="mt-6 pt-6 border-t space-y-3">
+                <div className="mt-6 pt-6 border-t">
                   <div className="flex items-center justify-between text-lg font-semibold">
                     <span>Total Items:</span>
                     <span>{itemIds.length}</span>
                   </div>
-                  <Button className="w-full" size="lg">
-                    Proceed to Checkout
-                  </Button>
                 </div>
               </CardContent>
             </Card>
