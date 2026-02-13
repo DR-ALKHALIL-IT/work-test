@@ -4,11 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { Container } from "@/components/layout/container";
 import { useToast } from "@/components/ui/use-toast";
 import { searchProducts } from "../api/queries/searchProducts";
+import { getProductsByCategory } from "../api/queries/getProductsByCategory";
 import { sortProductsAPI } from "../api/queries/sortProducts";
 import { ProductGrid } from "../components/product-grid";
 import { ProductModal } from "../components/product-modal";
 import { SearchBar } from "../components/search-bar";
 import { SortSelect } from "../components/sort-select";
+import { CategorySelect } from "../components/category-select";
 import { Pagination } from "../components/pagination";
 import { ResultsMeta } from "../components/results-meta";
 import { EmptyState } from "../components/empty-state";
@@ -35,6 +37,7 @@ export function ProductsDashboardView() {
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
+  const [category, setCategory] = useState<string | undefined>(undefined);
   const [sortBy, setSortBy] = useState<SortOption>("title");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
@@ -53,13 +56,24 @@ export function ProductsDashboardView() {
       const skip = (currentPage - 1) * PAGE_SIZE;
       let response: ProductsResponse;
 
-      // Priority: search > default with sorting
+      // Priority: search > category > default with sorting
       if (searchQuery) {
         response = await searchProducts(
           { q: searchQuery, limit: PAGE_SIZE, skip },
           signal,
         );
         // Client-side sort for search results
+        response.products = sortProductsClient(
+          response.products,
+          sortBy,
+          sortOrder,
+        );
+      } else if (category) {
+        response = await getProductsByCategory(
+          { slug: category, limit: PAGE_SIZE, skip },
+          signal,
+        );
+        // Client-side sort for category results
         response.products = sortProductsClient(
           response.products,
           sortBy,
@@ -107,7 +121,7 @@ export function ProductsDashboardView() {
       clearTimeout(timer);
       abortController.abort();
     };
-  }, [currentPage, searchQuery, sortBy, sortOrder]);
+  }, [currentPage, searchQuery, category, sortBy, sortOrder]);
 
   // Handlers
   const handleSearchChange = (value: string) => {
@@ -118,6 +132,11 @@ export function ProductsDashboardView() {
   const handleSortChange = (newSortBy: SortOption, newOrder: SortOrder) => {
     setSortBy(newSortBy);
     setSortOrder(newOrder);
+    setCurrentPage(1);
+  };
+
+  const handleCategoryChange = (newCategory: string | undefined) => {
+    setCategory(newCategory);
     setCurrentPage(1);
   };
 
@@ -152,7 +171,12 @@ export function ProductsDashboardView() {
             <SearchBar
               value={searchQuery}
               onChange={handleSearchChange}
-              className="flex-1 sm:max-w-md"
+              className="flex-1 sm:max-w-md min-w-0"
+            />
+            <CategorySelect
+              value={category}
+              onChange={handleCategoryChange}
+              className="sm:w-[180px]"
             />
             <SortSelect
               sortBy={sortBy}
@@ -169,6 +193,7 @@ export function ProductsDashboardView() {
             total={total}
             currentCount={products.length}
             searchQuery={searchQuery}
+            category={category}
           />
         )}
 

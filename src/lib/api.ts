@@ -60,6 +60,10 @@ export async function fetchJson<T>(
     if (error instanceof ApiError) {
       throw error;
     }
+    // Preserve AbortError so callers can ignore it (e.g. on unmount / Strict Mode)
+    if (error && typeof error === 'object' && (error as { name?: string }).name === 'AbortError') {
+      throw error;
+    }
 
     throw new ApiError(
       0,
