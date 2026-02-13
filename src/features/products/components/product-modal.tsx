@@ -12,33 +12,7 @@ import { Rating } from "./rating";
 import { StockBadge } from "./stock-badge";
 import { calculateDiscountedPrice } from "../utils";
 import { AddToCartButton } from "@/features/cart/components/add-to-cart-button";
-import type { Product, ProductReview } from "../types";
-
-// Enrich product with sample extended data when API doesn't provide them
-function enrichProduct(product: Product): Product {
-  const enriched = { ...product };
-  const seed = product.id;
-  if (!enriched.sku) enriched.sku = `SKU-${String(product.id).padStart(6, "0")}`;
-  if (enriched.weight == null) enriched.weight = 0.5 + ((seed % 20) / 10);
-  if (!enriched.dimensions) {
-    enriched.dimensions = {
-      width: 15 + (seed % 25),
-      height: 8 + (seed % 15),
-      depth: 3 + (seed % 10),
-    };
-  }
-  if (!enriched.warrantyInformation) enriched.warrantyInformation = "1 year manufacturer warranty";
-  if (!enriched.shippingInformation) enriched.shippingInformation = "Free shipping on orders over $50. Standard delivery 3–5 business days.";
-  if (!enriched.reviews || enriched.reviews.length < 3) {
-    const sampleReviews: ProductReview[] = [
-      { rating: 5, comment: "Excellent product, very satisfied!", date: "2024-01-15", reviewerName: "Sarah M." },
-      { rating: 4, comment: "Good quality and fast delivery.", date: "2024-01-20", reviewerName: "John D." },
-      { rating: 5, comment: "Highly recommend. Exceeded my expectations.", date: "2024-02-01", reviewerName: "Emma L." },
-    ];
-    enriched.reviews = enriched.reviews?.length ? [...enriched.reviews, ...sampleReviews].slice(0, 5) : sampleReviews;
-  }
-  return enriched;
-}
+import type { Product } from "../types";
 
 interface ProductModalProps {
   productId: number | null;
@@ -71,7 +45,7 @@ export function ProductModal({
 
       try {
         const data = await getSingleProduct(productId, abortController.signal);
-        setProduct(enrichProduct(data));
+        setProduct(data);
       } catch (err) {
         if (err instanceof Error && err.name !== "AbortError") {
           setError(err.message);
@@ -289,37 +263,37 @@ export function ProductModal({
           )}
 
           {/* Customer Reviews */}
-          {product.reviews && product.reviews.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <h3 className="font-semibold text-foreground">
-                  Customer reviews
-                </h3>
-                <div className="space-y-3">
-                  {product.reviews.slice(0, 5).map((review, idx) => (
-                    <div
-                      key={idx}
-                      className="rounded-lg border bg-muted/30 p-3 text-sm"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-foreground">
-                          {review.reviewerName}
-                        </span>
-                        <span className="text-muted-foreground">•</span>
-                        <Rating
-                          rating={review.rating}
-                          showValue={true}
-                          size="sm"
-                        />
-                      </div>
-                      <p className="text-muted-foreground">{review.comment}</p>
+          <Separator />
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">
+              Customer reviews
+            </h3>
+            {product.reviews && product.reviews.length > 0 ? (
+              <div className="space-y-3">
+                {product.reviews.map((review, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-lg border bg-muted/30 p-3 text-sm"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-foreground">
+                        {review.reviewerName}
+                      </span>
+                      <span className="text-muted-foreground">•</span>
+                      <Rating
+                        rating={review.rating}
+                        showValue={true}
+                        size="sm"
+                      />
                     </div>
-                  ))}
-                </div>
+                    <p className="text-muted-foreground">{review.comment}</p>
+                  </div>
+                ))}
               </div>
-            </>
-          )}
+            ) : (
+              <p className="text-sm text-muted-foreground">No reviews available</p>
+            )}
+          </div>
 
           {/* Add to Cart */}
           <div className="flex gap-3 pt-2">

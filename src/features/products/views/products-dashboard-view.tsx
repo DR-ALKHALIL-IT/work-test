@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Container } from "@/components/layout/container";
 import { useToast } from "@/components/ui/use-toast";
 import { searchProducts } from "../api/queries/searchProducts";
@@ -28,26 +28,20 @@ const SEARCH_DEBOUNCE_MS = 300;
 export function ProductsDashboardView() {
   const { toast } = useToast();
 
-  // State
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [category, setCategory] = useState<string | undefined>(undefined);
   const [sortBy, setSortBy] = useState<SortOption>("title");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
-  // Modal
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(
-    null,
-  );
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch products
   const fetchProducts = async (signal: AbortSignal) => {
     setLoading(true);
     setError(null);
@@ -56,13 +50,11 @@ export function ProductsDashboardView() {
       const skip = (currentPage - 1) * PAGE_SIZE;
       let response: ProductsResponse;
 
-      // Priority: search > category > default with sorting
       if (searchQuery) {
         response = await searchProducts(
-          { q: searchQuery, limit: PAGE_SIZE, skip },
+          { q: searchQuery, limit: PAGE_SIZE, skip, sortBy, order: sortOrder },
           signal,
         );
-        // Client-side sort for search results
         response.products = sortProductsClient(
           response.products,
           sortBy,
@@ -70,17 +62,15 @@ export function ProductsDashboardView() {
         );
       } else if (category) {
         response = await getProductsByCategory(
-          { slug: category, limit: PAGE_SIZE, skip },
+          { slug: category, limit: PAGE_SIZE, skip, sortBy, order: sortOrder },
           signal,
         );
-        // Client-side sort for category results
         response.products = sortProductsClient(
           response.products,
           sortBy,
           sortOrder,
         );
       } else {
-        // Server-side sort for default view
         response = await sortProductsAPI(
           sortBy,
           sortOrder,
@@ -106,24 +96,18 @@ export function ProductsDashboardView() {
     }
   };
 
-  // Effects
   useEffect(() => {
     const abortController = new AbortController();
-
     const timer = setTimeout(
-      () => {
-        fetchProducts(abortController.signal);
-      },
+      () => fetchProducts(abortController.signal),
       searchQuery ? SEARCH_DEBOUNCE_MS : 0,
     );
-
     return () => {
       clearTimeout(timer);
       abortController.abort();
     };
   }, [currentPage, searchQuery, category, sortBy, sortOrder]);
 
-  // Handlers
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
@@ -155,7 +139,6 @@ export function ProductsDashboardView() {
   return (
     <div className="min-h-screen bg-background">
       <Container className="max-w-7xl py-8 space-y-8">
-        {/* Page Header */}
         <div className="space-y-2">
           <h1 className="text-4xl font-bold tracking-tight text-foreground">
             Products
@@ -165,7 +148,6 @@ export function ProductsDashboardView() {
           </p>
         </div>
 
-        {/* Filters Section */}
         <div className="bg-card rounded-lg border p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
             <SearchBar
@@ -187,7 +169,6 @@ export function ProductsDashboardView() {
           </div>
         </div>
 
-        {/* Results Meta */}
         {!loading && products.length > 0 && (
           <ResultsMeta
             total={total}
@@ -197,7 +178,6 @@ export function ProductsDashboardView() {
           />
         )}
 
-        {/* Products Grid */}
         {error ? (
           <div className="py-12 text-center">
             <div className="inline-flex flex-col items-center gap-4">
@@ -234,7 +214,6 @@ export function ProductsDashboardView() {
           />
         )}
 
-        {/* Pagination */}
         {!loading && products.length > 0 && totalPages > 1 && (
           <Pagination
             currentPage={currentPage}
@@ -244,7 +223,6 @@ export function ProductsDashboardView() {
           />
         )}
 
-        {/* Product Modal */}
         <ProductModal
           productId={selectedProductId}
           isOpen={isModalOpen}
