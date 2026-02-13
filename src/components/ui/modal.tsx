@@ -4,6 +4,14 @@ import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { X } from 'lucide-react'
 
+const FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (el) => !el.hasAttribute('disabled') && el.offsetParent !== null
+  )
+}
+
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
@@ -20,36 +28,48 @@ export function Modal({ isOpen, onClose, children, title, description, className
 
   useEffect(() => {
     if (isOpen) {
-      // Store the previously focused element
       previousActiveElement.current = document.activeElement as HTMLElement
-      
-      // Focus the modal
-      modalRef.current?.focus()
-      
-      // Prevent body scroll
       document.body.style.overflow = 'hidden'
+      requestAnimationFrame(() => {
+        const focusables = modalRef.current ? getFocusableElements(modalRef.current) : []
+        if (focusables.length > 0) {
+          focusables[0].focus()
+        } else {
+          modalRef.current?.focus()
+        }
+      })
     } else {
-      // Restore body scroll
       document.body.style.overflow = ''
-      
-      // Restore focus to the previously focused element
       previousActiveElement.current?.focus()
     }
-
-    return () => {
-      document.body.style.overflow = ''
-    }
+    return () => { document.body.style.overflow = '' }
   }, [isOpen])
 
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         onClose()
+        return
+      }
+      if (e.key !== 'Tab' || !modalRef.current) return
+      const focusables = getFocusableElements(modalRef.current)
+      if (focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
       }
     }
-
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onClose])
 
   if (!isOpen) return null
