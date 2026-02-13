@@ -5,10 +5,13 @@ import { Container } from '@/components/layout/container'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CartItemRow } from '@/features/cart/components/cart-item-row'
+import { ProductModal } from '@/features/products/components/product-modal'
 import { getCartIds } from '@/features/cart/utils'
 
 export default function CartPage() {
   const [itemIds, setItemIds] = useState<number[]>([])
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     setItemIds(getCartIds())
@@ -23,6 +26,11 @@ export default function CartPage() {
 
   const handleRemoveItem = () => {
     setItemIds(getCartIds())
+  }
+
+  const handleProductClick = (productId: number) => {
+    setSelectedProductId(productId)
+    setIsModalOpen(true)
   }
 
   return (
@@ -79,6 +87,7 @@ export default function CartPage() {
                       key={`${id}-${index}`}
                       productId={id}
                       onRemoved={handleRemoveItem}
+                      onProductClick={handleProductClick}
                     />
                   ))}
                 </div>
@@ -92,6 +101,12 @@ export default function CartPage() {
             </Card>
           )}
         </div>
+
+        <ProductModal
+          productId={selectedProductId}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
       </Container>
     </div>
   )

@@ -8,9 +8,9 @@ interface StockBadgeProps {
 }
 
 const VARIANTS: Record<StockStatus, { text: string; className: string }> = {
-  out: { text: 'Out of Stock', className: 'bg-red-100 text-red-700 border-red-200' },
-  low: { text: 'Low Stock', className: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
-  in: { text: 'In Stock', className: 'bg-green-100 text-green-700 border-green-200' },
+  out: { text: 'Out of Stock', className: 'bg-destructive/10 text-destructive border-destructive/30' },
+  low: { text: 'Low Stock', className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30' },
+  in: { text: 'In Stock', className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' },
 };
 
 export function StockBadge({ stock, className }: StockBadgeProps) {

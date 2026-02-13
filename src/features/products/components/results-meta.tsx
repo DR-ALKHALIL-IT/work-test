@@ -16,12 +16,12 @@ export function ResultsMeta({ total, currentCount, searchQuery, category }: Resu
   };
 
   return (
-    <div className="flex items-center gap-2 text-sm text-gray-600">
+    <div className="flex items-center gap-2 text-sm text-foreground">
       <span className="font-medium">
         Showing {currentCount} of {total} products
       </span>
       {getActiveFilter() && (
-        <span className="text-gray-500">{getActiveFilter()}</span>
+        <span className="text-muted-foreground">{getActiveFilter()}</span>
       )}
     </div>
   );

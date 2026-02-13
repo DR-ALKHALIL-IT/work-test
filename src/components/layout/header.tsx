@@ -29,12 +29,6 @@ export function Header() {
             >
               Categories
             </Link>
-            <Link 
-              href="/cart" 
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded px-2 py-1"
-            >
-              Cart
-            </Link>
             <ThemeToggle />
             <CartIconWithBadge />
           </nav>

@@ -12,7 +12,7 @@ interface ProductGridProps {
 
 function ProductCardSkeleton() {
   return (
-    <div className="rounded-lg border bg-white overflow-hidden">
+    <div className="rounded-lg border bg-card overflow-hidden">
       <Skeleton className="aspect-square w-full" />
       <div className="p-4 space-y-3">
         <Skeleton className="h-4 w-16" />

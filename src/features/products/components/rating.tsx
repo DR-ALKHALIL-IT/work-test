@@ -1,5 +1,6 @@
 'use client'
 
+import { useId } from 'react';
 import { cn } from '@/lib/utils';
 
 interface RatingProps {
@@ -17,6 +18,7 @@ export function Rating({
   showValue = true,
   size = 'md' 
 }: RatingProps) {
+  const baseId = useId().replace(/:/g, '-');
   const fullStars = Math.floor(rating);
   const hasHalfStar = rating % 1 >= 0.5;
 
@@ -55,13 +57,13 @@ export function Rating({
               {isHalf ? (
                 <>
                   <defs>
-                    <linearGradient id={`half-${index}`}>
+                    <linearGradient id={`${baseId}-half-${index}`}>
                       <stop offset="50%" stopColor="currentColor" className="text-yellow-400" />
                       <stop offset="50%" stopColor="currentColor" className="text-muted-foreground/30" />
                     </linearGradient>
                   </defs>
                   <path
-                    fill={`url(#half-${index})`}
+                    fill={`url(#${baseId}-half-${index})`}
                     d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
                   />
                 </>

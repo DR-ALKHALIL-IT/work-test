@@ -21,18 +21,8 @@ export const metadata: Metadata = {
   description: 'Clean minimal dashboard application',
 }
 
-const themeScript = `
-(function() {
-  const stored = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = stored || (prefersDark ? 'dark' : 'light');
-  if (theme === 'dark') {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-})();
-`
+const themeScript =
+  '(function(){var s=localStorage.getItem("theme");var d=window.matchMedia("(prefers-color-scheme: dark)").matches;var t=s||(d?"dark":"light");document.documentElement.classList.toggle("dark",t==="dark");})();'
 
 export default function RootLayout({
   children,
