@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { CartIconWithBadge } from '@/features/cart/components/cart-icon-with-badge'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export function Header() {
   return (
@@ -34,6 +35,7 @@ export function Header() {
             >
               Cart
             </Link>
+            <ThemeToggle />
             <CartIconWithBadge />
           </nav>
         </div>
