@@ -19,9 +19,8 @@ export function CategoriesView() {
     getCategoryList(controller.signal)
       .then(setCategories)
       .catch((err) => {
-        if (err.name !== 'AbortError') {
-          setError(err)
-        }
+        const isAbort = err?.name === 'AbortError' || /abort/i.test(err?.message ?? '')
+        if (!isAbort) setError(err)
       })
       .finally(() => setIsLoading(false))
 

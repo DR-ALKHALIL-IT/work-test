@@ -27,9 +27,8 @@ export function CategoryProductsView({ slug }: CategoryProductsViewProps) {
     getProductsByCategory({ slug }, controller.signal)
       .then((response) => setProducts(response.products))
       .catch((err) => {
-        if (err.name !== 'AbortError') {
-          setError(err)
-        }
+        const isAbort = err?.name === 'AbortError' || /abort/i.test(err?.message ?? '')
+        if (!isAbort) setError(err)
       })
       .finally(() => setIsLoading(false))
 

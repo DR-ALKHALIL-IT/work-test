@@ -60,6 +60,13 @@ export async function fetchJson<T>(
     if (error instanceof ApiError) {
       throw error;
     }
+    // Re-throw abort errors so callers can ignore them (e.g. component unmount in Strict Mode)
+    if (
+      error instanceof Error &&
+      (error.name === 'AbortError' || /abort/i.test(error.message))
+    ) {
+      throw error;
+    }
 
     throw new ApiError(
       0,

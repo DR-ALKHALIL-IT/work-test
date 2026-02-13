@@ -1,128 +1,106 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useTransition, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Container } from "@/components/layout/container";
-import { useToast } from "@/components/ui/use-toast";
-import { searchProducts } from "../api/queries/searchProducts";
-import { sortProductsAPI } from "../api/queries/sortProducts";
 import { ProductGrid } from "../components/product-grid";
 import { ProductModal } from "../components/product-modal";
 import { SearchBar } from "../components/search-bar";
 import { SortSelect } from "../components/sort-select";
+import { CategorySelect } from "../components/category-select";
 import { Pagination } from "../components/pagination";
 import { ResultsMeta } from "../components/results-meta";
 import { EmptyState } from "../components/empty-state";
-import { sortProducts as sortProductsClient } from "../utils";
+import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import type {
   Product,
-  ProductsResponse,
   SortOption,
   SortOrder,
+  CategoryOption,
 } from "../types";
 
 const PAGE_SIZE = 12;
 const SEARCH_DEBOUNCE_MS = 300;
 
-export function ProductsDashboardView() {
-  const { toast } = useToast();
+interface ProductsDashboardViewProps {
+  initialProducts: Product[];
+  initialTotal: number;
+  initialPage: number;
+  initialSearch: string;
+  initialCategory: string;
+  initialCategoryName: string;
+  initialCategories: CategoryOption[];
+  initialSortBy: SortOption;
+  initialSortOrder: SortOrder;
+}
 
-  // State
-  const [products, setProducts] = useState<Product[]>([]);
-  const [total, setTotal] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function ProductsDashboardView({
+  initialProducts,
+  initialTotal,
+  initialPage,
+  initialSearch,
+  initialCategory,
+  initialCategoryName,
+  initialCategories,
+  initialSortBy,
+  initialSortOrder,
+}: ProductsDashboardViewProps) {
+  const products = initialProducts ?? [];
+  const total = initialTotal ?? 0;
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
 
-  // Filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("title");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
 
-  // Modal
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(
-    null,
-  );
+  useEffect(() => {
+    setSearchQuery(initialSearch);
+  }, [initialSearch]);
+
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch products
-  const fetchProducts = async (signal: AbortSignal) => {
-    setLoading(true);
-    setError(null);
+  const updateUrl = (updates: Record<string, string | number>) => {
+    const params = new URLSearchParams();
+    const q = updates.q !== undefined ? String(updates.q) : initialSearch;
+    const category =
+      updates.category !== undefined ? String(updates.category) : initialCategory;
+    const sortBy = updates.sortBy ?? initialSortBy;
+    const order = updates.order ?? initialSortOrder;
+    const page = updates.page ?? initialPage;
 
-    try {
-      const skip = (currentPage - 1) * PAGE_SIZE;
-      let response: ProductsResponse;
+    if (q) params.set("q", q);
+    if (category) params.set("category", category);
+    params.set("sortBy", String(sortBy));
+    params.set("order", String(order));
+    if (page > 1) params.set("page", String(page));
 
-      // Priority: search > default with sorting
-      if (searchQuery) {
-        response = await searchProducts(
-          { q: searchQuery, limit: PAGE_SIZE, skip },
-          signal,
-        );
-        // Client-side sort for search results
-        response.products = sortProductsClient(
-          response.products,
-          sortBy,
-          sortOrder,
-        );
-      } else {
-        // Server-side sort for default view
-        response = await sortProductsAPI(
-          sortBy,
-          sortOrder,
-          PAGE_SIZE,
-          skip,
-          signal,
-        );
-      }
-
-      setProducts(response.products);
-      setTotal(response.total);
-    } catch (err) {
-      if (err instanceof Error && err.name !== "AbortError") {
-        setError(err.message);
-        toast({
-          title: "Error",
-          description: err.message,
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
+    const query = params.toString();
+    startTransition(() => {
+      router.push(query ? `${pathname}?${query}` : pathname);
+    });
   };
 
-  // Effects
-  useEffect(() => {
-    const abortController = new AbortController();
+  const debouncedUpdateSearch = useDebouncedCallback((value: string) => {
+    setSearchQuery(value);
+    updateUrl({ q: value, page: 1 });
+  }, SEARCH_DEBOUNCE_MS);
 
-    const timer = setTimeout(
-      () => {
-        fetchProducts(abortController.signal);
-      },
-      searchQuery ? SEARCH_DEBOUNCE_MS : 0,
-    );
-
-    return () => {
-      clearTimeout(timer);
-      abortController.abort();
-    };
-  }, [currentPage, searchQuery, sortBy, sortOrder]);
-
-  // Handlers
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setCurrentPage(1);
+    debouncedUpdateSearch(value);
+  };
+
+  const handleCategoryChange = (slug: string) => {
+    updateUrl({ category: slug, page: 1 });
   };
 
   const handleSortChange = (newSortBy: SortOption, newOrder: SortOrder) => {
-    setSortBy(newSortBy);
-    setSortOrder(newOrder);
-    setCurrentPage(1);
+    updateUrl({ sortBy: newSortBy, order: newOrder, page: 1 });
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    updateUrl({ page });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -136,7 +114,6 @@ export function ProductsDashboardView() {
   return (
     <div className="min-h-screen bg-background">
       <Container className="max-w-7xl py-8 space-y-8">
-        {/* Page Header */}
         <div className="space-y-2">
           <h1 className="text-4xl font-bold tracking-tight text-foreground">
             Products
@@ -146,7 +123,6 @@ export function ProductsDashboardView() {
           </p>
         </div>
 
-        {/* Filters Section */}
         <div className="bg-card rounded-lg border p-4 shadow-sm">
           <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
             <SearchBar
@@ -154,72 +130,49 @@ export function ProductsDashboardView() {
               onChange={handleSearchChange}
               className="flex-1 sm:max-w-md"
             />
+            <CategorySelect
+              categories={initialCategories}
+              value={initialCategory}
+              onChange={handleCategoryChange}
+              className="sm:w-48"
+            />
             <SortSelect
-              sortBy={sortBy}
-              order={sortOrder}
+              sortBy={initialSortBy}
+              order={initialSortOrder}
               onSortChange={handleSortChange}
               className="sm:w-48"
             />
           </div>
         </div>
 
-        {/* Results Meta */}
-        {!loading && products.length > 0 && (
+        {!isPending && products.length > 0 && (
           <ResultsMeta
             total={total}
             currentCount={products.length}
-            searchQuery={searchQuery}
+            searchQuery={initialSearch}
+            category={initialCategoryName}
           />
         )}
 
-        {/* Products Grid */}
-        {error ? (
-          <div className="py-12 text-center">
-            <div className="inline-flex flex-col items-center gap-4">
-              <div className="rounded-full bg-destructive/10 p-3">
-                <svg
-                  className="h-6 w-6 text-destructive"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <div className="space-y-1">
-                <p className="font-semibold text-foreground">
-                  Error Loading Products
-                </p>
-                <p className="text-sm text-muted-foreground">{error}</p>
-              </div>
-            </div>
-          </div>
-        ) : products.length === 0 && !loading ? (
+        {products.length === 0 && !isPending ? (
           <EmptyState />
         ) : (
           <ProductGrid
             products={products}
-            loading={loading}
+            loading={isPending}
             onProductClick={handleProductClick}
           />
         )}
 
-        {/* Pagination */}
-        {!loading && products.length > 0 && totalPages > 1 && (
+        {!isPending && products.length > 0 && totalPages > 1 && (
           <Pagination
-            currentPage={currentPage}
+            currentPage={initialPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
             className="pt-4"
           />
         )}
 
-        {/* Product Modal */}
         <ProductModal
           productId={selectedProductId}
           isOpen={isModalOpen}

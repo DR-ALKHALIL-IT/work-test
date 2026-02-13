@@ -52,6 +52,13 @@ export interface CategoryParams {
   slug: string;
   limit?: number;
   skip?: number;
+  sortBy?: string;
+  order?: SortOrder;
+}
+
+export interface CategoryOption {
+  slug: string;
+  name: string;
 }
 
 export type SortOption = "title" | "price" | "rating";
