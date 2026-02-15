@@ -6,18 +6,18 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CartItemRow } from '@/features/cart/components/cart-item-row'
 import { ProductModal } from '@/features/products/components/product-modal'
-import { getCartIds } from '@/features/cart/utils'
+import { getCartItems, type CartItem } from '@/features/cart/utils'
 
 export default function CartPage() {
-  const [itemIds, setItemIds] = useState<number[]>([])
+  const [items, setItems] = useState<CartItem[]>([])
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
-    setItemIds(getCartIds())
+    setItems(getCartItems())
 
     const handleCartUpdate = () => {
-      setItemIds(getCartIds())
+      setItems(getCartItems())
     }
 
     window.addEventListener('cart-updated', handleCartUpdate)
@@ -25,8 +25,10 @@ export default function CartPage() {
   }, [])
 
   const handleRemoveItem = () => {
-    setItemIds(getCartIds())
+    setItems(getCartItems())
   }
+
+  const totalCount = items.reduce((sum, i) => sum + i.quantity, 0)
 
   const handleProductClick = (productId: number) => {
     setSelectedProductId(productId)
@@ -41,12 +43,12 @@ export default function CartPage() {
             <div className="space-y-2">
               <h1 className="text-4xl font-bold tracking-tight text-foreground">Shopping Cart</h1>
               <p className="text-lg text-muted-foreground">
-                {itemIds.length === 0 ? 'Your cart is empty' : `${itemIds.length} item${itemIds.length === 1 ? '' : 's'} in your cart`}
+                {items.length === 0 ? 'Your cart is empty' : `${totalCount} item${totalCount === 1 ? '' : 's'} in your cart`}
               </p>
             </div>
           </div>
 
-          {itemIds.length === 0 ? (
+          {items.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <div className="rounded-full bg-muted/50 p-6 mb-6">
@@ -82,10 +84,11 @@ export default function CartPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {itemIds.map((id, index) => (
+                  {items.map((item) => (
                     <CartItemRow
-                      key={`${id}-${index}`}
-                      productId={id}
+                      key={item.productId}
+                      productId={item.productId}
+                      quantity={item.quantity}
                       onRemoved={handleRemoveItem}
                       onProductClick={handleProductClick}
                     />
@@ -94,7 +97,7 @@ export default function CartPage() {
                 <div className="mt-6 pt-6 border-t">
                   <div className="flex items-center justify-between text-lg font-semibold">
                     <span>Total Items:</span>
-                    <span>{itemIds.length}</span>
+                    <span>{totalCount}</span>
                   </div>
                 </div>
               </CardContent>

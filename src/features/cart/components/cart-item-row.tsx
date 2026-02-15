@@ -5,17 +5,19 @@ import { Button } from "@/components/ui/button";
 import { getSingleProduct } from "@/features/products/api/getSingleProduct";
 import { calculateDiscountedPrice } from "@/features/products/utils";
 import { formatPrice } from "@/lib/utils";
-import { removeFromCart } from "../utils";
+import { addToCart, decreaseCartQuantity, removeFromCart } from "../utils";
 import type { Product } from "@/features/products/types";
 
 interface CartItemRowProps {
   productId: number;
+  quantity: number;
   onRemoved: () => void;
   onProductClick?: (productId: number) => void;
 }
 
 export function CartItemRow({
   productId,
+  quantity,
   onRemoved,
   onProductClick,
 }: CartItemRowProps) {
@@ -117,14 +119,41 @@ export function CartItemRow({
           {formatPrice(price)}
         </p>
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleRemove}
-        className="shrink-0"
-      >
-        Remove
-      </Button>
+      <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center border rounded-md bg-muted/50">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-r-none"
+            onClick={() => decreaseCartQuantity(productId)}
+            aria-label="Decrease quantity"
+          >
+            −
+          </Button>
+          <span className="min-w-[2rem] text-center text-sm font-medium tabular-nums" aria-label={`Quantity: ${quantity}`}>
+            {quantity}
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-l-none"
+            onClick={() => addToCart(productId)}
+            aria-label="Increase quantity"
+          >
+            +
+          </Button>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRemove}
+          aria-label="Remove from cart"
+        >
+          Remove
+        </Button>
+      </div>
     </div>
   );
 }
