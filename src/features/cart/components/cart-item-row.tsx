@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { getSingleProduct } from '@/features/products/api/queries/getSingleProduct';
-import { calculateDiscountedPrice } from '@/features/products/utils';
-import { formatPrice } from '@/lib/utils';
-import { removeFromCart } from '../utils';
-import type { Product } from '@/features/products/types';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { getSingleProduct } from "@/features/products/api/getSingleProduct";
+import { calculateDiscountedPrice } from "@/features/products/utils";
+import { formatPrice } from "@/lib/utils";
+import { removeFromCart } from "../utils";
+import type { Product } from "@/features/products/types";
 
 interface CartItemRowProps {
   productId: number;
@@ -14,7 +14,11 @@ interface CartItemRowProps {
   onProductClick?: (productId: number) => void;
 }
 
-export function CartItemRow({ productId, onRemoved, onProductClick }: CartItemRowProps) {
+export function CartItemRow({
+  productId,
+  onRemoved,
+  onProductClick,
+}: CartItemRowProps) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,7 +51,9 @@ export function CartItemRow({ productId, onRemoved, onProductClick }: CartItemRo
   if (!product) {
     return (
       <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
-        <span className="text-sm text-muted-foreground">Product #{productId} (unavailable)</span>
+        <span className="text-sm text-muted-foreground">
+          Product #{productId} (unavailable)
+        </span>
         <Button variant="ghost" size="sm" onClick={handleRemove}>
           Remove
         </Button>
@@ -55,7 +61,10 @@ export function CartItemRow({ productId, onRemoved, onProductClick }: CartItemRo
     );
   }
 
-  const price = calculateDiscountedPrice(product.price, product.discountPercentage);
+  const price = calculateDiscountedPrice(
+    product.price,
+    product.discountPercentage,
+  );
 
   const handleProductClick = () => {
     onProductClick?.(product.id);
@@ -99,12 +108,21 @@ export function CartItemRow({ productId, onRemoved, onProductClick }: CartItemRo
             {product.title}
           </button>
         ) : (
-          <p className="font-medium text-foreground truncate">{product.title}</p>
+          <p className="font-medium text-foreground truncate">
+            {product.title}
+          </p>
         )}
         <p className="text-sm text-muted-foreground">{product.brand}</p>
-        <p className="text-sm font-semibold text-foreground mt-1">{formatPrice(price)}</p>
+        <p className="text-sm font-semibold text-foreground mt-1">
+          {formatPrice(price)}
+        </p>
       </div>
-      <Button variant="outline" size="sm" onClick={handleRemove} className="shrink-0">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleRemove}
+        className="shrink-0"
+      >
         Remove
       </Button>
     </div>

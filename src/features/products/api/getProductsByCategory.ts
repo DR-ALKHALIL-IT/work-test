@@ -1,6 +1,6 @@
-import { fetchJson } from '@/lib/api';
-import { buildQueryString } from '@/lib/utils';
-import type { ProductsResponse, CategoryParams } from '../../types';
+import { fetchJson } from "@/lib/api";
+import { buildQueryString } from "@/lib/utils";
+import type { ProductsResponse, CategoryParams } from "../types";
 
 /**
  * GET /products/category/{slug} - Products by category.
@@ -9,13 +9,13 @@ import type { ProductsResponse, CategoryParams } from '../../types';
  * is applied as fallback for consistent behavior with pagination.
  */
 export async function getProductsByCategory(
-  params: CategoryParams & { sortBy?: string; order?: 'asc' | 'desc' },
-  signal?: AbortSignal
+  params: CategoryParams & { sortBy?: string; order?: "asc" | "desc" },
+  signal?: AbortSignal,
 ): Promise<ProductsResponse> {
   const { slug, limit, skip, sortBy, order } = params;
   const queryString = buildQueryString({ limit, skip, sortBy, order });
   return fetchJson<ProductsResponse>(
     `/products/category/${slug}${queryString}`,
-    { signal }
+    { signal },
   );
 }

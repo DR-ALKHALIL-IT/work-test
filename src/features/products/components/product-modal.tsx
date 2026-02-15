@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { formatPrice } from "@/lib/utils";
-import { getSingleProduct } from "../api/queries/getSingleProduct";
+import { getSingleProduct } from "../api/getSingleProduct";
 import { ProductGallery } from "./product-gallery";
 import { Rating } from "./rating";
 import { StockBadge } from "./stock-badge";
@@ -262,37 +262,50 @@ export function ProductModal({
             </>
           )}
 
-          {/* Customer Reviews */}
+          {/* Customer Reviews (show at least 3 slots per PDF) */}
           <Separator />
           <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">
-              Customer reviews
-            </h3>
-            {product.reviews && product.reviews.length > 0 ? (
-              <div className="space-y-3">
-                {product.reviews.map((review, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-lg border bg-muted/30 p-3 text-sm"
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-foreground">
-                        {review.reviewerName}
-                      </span>
-                      <span className="text-muted-foreground">•</span>
-                      <Rating
-                        rating={review.rating}
-                        showValue={true}
-                        size="sm"
-                      />
-                    </div>
-                    <p className="text-muted-foreground">{review.comment}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No reviews available</p>
-            )}
+            <h3 className="font-semibold text-foreground">Customer reviews</h3>
+            {(() => {
+              const MIN_REVIEWS_DISPLAY = 3;
+              const reviews = product.reviews ?? [];
+              const minSlots = Math.max(MIN_REVIEWS_DISPLAY, reviews.length);
+              const slots = Array.from({ length: minSlots }, (_, i) =>
+                i < reviews.length ? reviews[i] : null
+              );
+              return (
+                <div className="space-y-3">
+                  {slots.map((review, idx) =>
+                    review ? (
+                      <div
+                        key={`${review.reviewerName}-${idx}`}
+                        className="rounded-lg border bg-muted/30 p-3 text-sm"
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-foreground">
+                            {review.reviewerName}
+                          </span>
+                          <span className="text-muted-foreground">•</span>
+                          <Rating
+                            rating={review.rating}
+                            showValue={true}
+                            size="sm"
+                          />
+                        </div>
+                        <p className="text-muted-foreground">{review.comment}</p>
+                      </div>
+                    ) : (
+                      <div
+                        key={`placeholder-${idx}`}
+                        className="rounded-lg border border-dashed bg-muted/20 p-3 text-sm text-muted-foreground italic"
+                      >
+                        No reviews yet. Be the first to review!
+                      </div>
+                    )
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Add to Cart */}
