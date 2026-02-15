@@ -19,7 +19,7 @@ export function CategoriesView() {
     getCategoryList(controller.signal)
       .then(setCategories)
       .catch((err) => {
-        if (err.name !== 'AbortError') {
+        if (err instanceof Error && err.name !== 'AbortError') {
           setError(err)
         }
       })

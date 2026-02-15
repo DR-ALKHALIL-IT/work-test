@@ -1,16 +1,19 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ApiError } from '@/lib/api';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ApiError } from "@/lib/api";
 
 interface ErrorBoundaryContentProps {
   error: Error;
   reset: () => void;
 }
 
-export function ErrorBoundaryContent({ error, reset }: ErrorBoundaryContentProps) {
+export function ErrorBoundaryContent({
+  error,
+  reset,
+}: ErrorBoundaryContentProps) {
   return (
     <div className="flex min-h-[200px] items-center justify-center p-4">
       <Card className="max-w-md p-6">
@@ -22,7 +25,7 @@ export function ErrorBoundaryContent({ error, reset }: ErrorBoundaryContentProps
             <p className="mt-2 text-sm text-muted-foreground">
               {error instanceof ApiError
                 ? error.message
-                : error.message || 'An unexpected error occurred'}
+                : error.message || "An unexpected error occurred"}
             </p>
             {error instanceof ApiError && (
               <p className="mt-1 text-xs text-muted-foreground">
@@ -63,7 +66,7 @@ export class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('[v0] ErrorBoundary caught error:', error, errorInfo);
+    console.error("[v0] ErrorBoundary caught error:", error, errorInfo);
   }
 
   reset = () => {
@@ -87,7 +90,8 @@ export class ErrorBoundary extends React.Component<
                 <p className="mt-2 text-sm text-muted-foreground">
                   {this.state.error instanceof ApiError
                     ? this.state.error.message
-                    : this.state.error.message || 'An unexpected error occurred'}
+                    : this.state.error.message ||
+                      "An unexpected error occurred"}
                 </p>
                 {this.state.error instanceof ApiError && (
                   <p className="mt-1 text-xs text-muted-foreground">

@@ -1,5 +1,5 @@
-import { ProductsDashboardView } from '@/features/products/views/products-dashboard-view'
+import { ProductsPageClient } from './products-page-client'
 
 export default function ProductsPage() {
-  return <ProductsDashboardView />
+  return <ProductsPageClient />
 }

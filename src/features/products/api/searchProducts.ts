@@ -1,6 +1,6 @@
-import { fetchJson } from '@/lib/api';
-import { buildQueryString } from '@/lib/utils';
-import type { ProductsResponse, SearchParams } from '../../types';
+import { fetchJson } from "@/lib/api";
+import { buildQueryString } from "@/lib/utils";
+import type { ProductsResponse, SearchParams } from "../types";
 
 /**
  * GET /products/search - Search products.
@@ -10,8 +10,10 @@ import type { ProductsResponse, SearchParams } from '../../types';
  */
 export async function searchProducts(
   params: SearchParams,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<ProductsResponse> {
   const queryString = buildQueryString(params);
-  return fetchJson<ProductsResponse>(`/products/search${queryString}`, { signal });
+  return fetchJson<ProductsResponse>(`/products/search${queryString}`, {
+    signal,
+  });
 }

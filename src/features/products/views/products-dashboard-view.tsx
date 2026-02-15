@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Container } from "@/components/layout/container";
 import { useToast } from "@/components/ui/use-toast";
-import { searchProducts } from "../api/queries/searchProducts";
-import { getProductsByCategory } from "../api/queries/getProductsByCategory";
-import { sortProductsAPI } from "../api/queries/sortProducts";
 import { ProductGrid } from "../components/product-grid";
 import { ProductModal } from "../components/product-modal";
 import { SearchBar } from "../components/search-bar";
@@ -14,103 +12,165 @@ import { CategorySelect } from "../components/category-select";
 import { Pagination } from "../components/pagination";
 import { ResultsMeta } from "../components/results-meta";
 import { EmptyState } from "../components/empty-state";
-import { sortProducts as sortProductsClient } from "../utils";
-import type {
-  Product,
-  ProductsResponse,
-  SortOption,
-  SortOrder,
-} from "../types";
+import { useProductsQuery, PAGE_SIZE } from "../hooks/useProductsQuery";
+import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import type { Product, SortOption, SortOrder } from "../types";
 
-const PAGE_SIZE = 12;
 const SEARCH_DEBOUNCE_MS = 300;
+const VALID_SORT: SortOption[] = ["title", "price", "rating"];
+const VALID_ORDER: SortOrder[] = ["asc", "desc"];
+
+function parseSearchParams(searchParams: URLSearchParams) {
+  const q = searchParams.get("q") ?? "";
+  const category = searchParams.get("category") ?? undefined;
+  const sortParam = searchParams.get("sort");
+  const sortBy: SortOption = VALID_SORT.includes(sortParam as SortOption)
+    ? (sortParam as SortOption)
+    : "title";
+  const orderParam = searchParams.get("order");
+  const sortOrder: SortOrder = VALID_ORDER.includes(orderParam as SortOrder)
+    ? (orderParam as SortOrder)
+    : "asc";
+  const pageNum = parseInt(searchParams.get("page") ?? "1", 10);
+  const currentPage = Number.isNaN(pageNum) || pageNum < 1 ? 1 : pageNum;
+  return {
+    searchQuery: q,
+    debouncedSearch: q,
+    category: category || undefined,
+    sortBy,
+    sortOrder,
+    currentPage,
+  };
+}
+
+function buildProductsQueryString(params: {
+  q: string;
+  category: string | undefined;
+  sortBy: SortOption;
+  sortOrder: SortOrder;
+  page: number;
+}) {
+  const sp = new URLSearchParams();
+  if (params.q) sp.set("q", params.q);
+  if (params.category) sp.set("category", params.category);
+  if (params.sortBy !== "title") sp.set("sort", params.sortBy);
+  if (params.sortOrder !== "asc") sp.set("order", params.sortOrder);
+  if (params.page > 1) sp.set("page", String(params.page));
+  const s = sp.toString();
+  return s ? `?${s}` : "";
+}
 
 export function ProductsDashboardView() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const [products, setProducts] = useState<Product[]>([]);
-  const [total, setTotal] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [category, setCategory] = useState<string | undefined>(undefined);
-  const [sortBy, setSortBy] = useState<SortOption>("title");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") ?? "");
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get("q") ?? "");
+  const [category, setCategory] = useState<string | undefined>(() => searchParams.get("category") ?? undefined);
+  const [sortBy, setSortBy] = useState<SortOption>(() => {
+    const s = searchParams.get("sort");
+    return VALID_SORT.includes(s as SortOption) ? (s as SortOption) : "title";
+  });
+  const [sortOrder, setSortOrder] = useState<SortOrder>(() => {
+    const o = searchParams.get("order");
+    return VALID_ORDER.includes(o as SortOrder) ? (o as SortOrder) : "asc";
+  });
+  const [currentPage, setCurrentPage] = useState(() => {
+    const p = parseInt(searchParams.get("page") ?? "1", 10);
+    return Number.isNaN(p) || p < 1 ? 1 : p;
+  });
 
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fetchProducts = async (signal: AbortSignal) => {
-    setLoading(true);
-    setError(null);
+  // Ref to avoid pushing the same URL again (router.replace can lag, so searchParams might not update immediately)
+  const lastPushedQueryRef = useRef<string | null>(null);
 
-    try {
-      const skip = (currentPage - 1) * PAGE_SIZE;
-      let response: ProductsResponse;
+  // Sync state from URL only when the query string actually changes (e.g. back/forward)
+  const searchParamsString = searchParams.toString();
+  useEffect(() => {
+    lastPushedQueryRef.current = null; // User navigated (or initial load); allow next URL update
+    const parsed = parseSearchParams(searchParams);
+    setSearchQuery(parsed.searchQuery);
+    setDebouncedSearch(parsed.debouncedSearch);
+    setCategory(parsed.category);
+    setSortBy(parsed.sortBy);
+    setSortOrder(parsed.sortOrder);
+    setCurrentPage(parsed.currentPage);
+  }, [searchParamsString]); // eslint-disable-line react-hooks/exhaustive-deps -- parseSearchParams reads from searchParams
 
-      if (searchQuery) {
-        response = await searchProducts(
-          { q: searchQuery, limit: PAGE_SIZE, skip, sortBy, order: sortOrder },
-          signal,
-        );
-        response.products = sortProductsClient(
-          response.products,
-          sortBy,
-          sortOrder,
-        );
-      } else if (category) {
-        response = await getProductsByCategory(
-          { slug: category, limit: PAGE_SIZE, skip, sortBy, order: sortOrder },
-          signal,
-        );
-        response.products = sortProductsClient(
-          response.products,
-          sortBy,
-          sortOrder,
-        );
-      } else {
-        response = await sortProductsAPI(
-          sortBy,
-          sortOrder,
-          PAGE_SIZE,
-          skip,
-          signal,
-        );
-      }
+  const updateUrl = useCallback(
+    (params: {
+      q: string;
+      category: string | undefined;
+      sortBy: SortOption;
+      sortOrder: SortOrder;
+      page: number;
+    }) => {
+      const query = buildProductsQueryString(params);
+      lastPushedQueryRef.current = query || null;
+      router.replace(`/products${query}`, { scroll: false });
+    },
+    [router]
+  );
 
-      setProducts(response.products);
-      setTotal(response.total);
-    } catch (err) {
-      if (err instanceof Error && err.name !== "AbortError") {
-        setError(err.message);
-        toast({
-          title: "Error",
-          description: err.message,
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setLoading(false);
+  // Update URL when filters/search/page change. Skip if we already pushed this query (avoids loop when router lags).
+  useEffect(() => {
+    const desired = buildProductsQueryString({
+      q: debouncedSearch,
+      category,
+      sortBy,
+      sortOrder,
+      page: currentPage,
+    });
+    const currentNorm = searchParamsString ? `?${searchParamsString}` : "";
+    const alreadyPushed = lastPushedQueryRef.current === (desired || null);
+    if (desired !== currentNorm && !alreadyPushed) {
+      updateUrl({
+        q: debouncedSearch,
+        category,
+        sortBy,
+        sortOrder,
+        page: currentPage,
+      });
     }
-  };
+  }, [debouncedSearch, category, sortBy, sortOrder, currentPage, searchParamsString, updateUrl]);
+
+  const debouncedSetSearch = useDebouncedCallback((value: string) => {
+    setDebouncedSearch(value);
+    setCurrentPage(1);
+  }, SEARCH_DEBOUNCE_MS);
+
+  const {
+    products,
+    total,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+  } = useProductsQuery({
+    limit: PAGE_SIZE,
+    skip: (currentPage - 1) * PAGE_SIZE,
+    sortBy,
+    order: sortOrder,
+    searchQuery: debouncedSearch || undefined,
+    category,
+  });
 
   useEffect(() => {
-    const abortController = new AbortController();
-    const timer = setTimeout(
-      () => fetchProducts(abortController.signal),
-      searchQuery ? SEARCH_DEBOUNCE_MS : 0,
-    );
-    return () => {
-      clearTimeout(timer);
-      abortController.abort();
-    };
-  }, [currentPage, searchQuery, category, sortBy, sortOrder]);
+    if (isError && error instanceof Error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }, [isError, error, toast]);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setCurrentPage(1);
+    debouncedSetSearch(value);
   };
 
   const handleSortChange = (newSortBy: SortOption, newOrder: SortOrder) => {
@@ -169,16 +229,16 @@ export function ProductsDashboardView() {
           </div>
         </div>
 
-        {!loading && products.length > 0 && (
+        {!isFetching && products.length > 0 && (
           <ResultsMeta
             total={total}
             currentCount={products.length}
-            searchQuery={searchQuery}
+            searchQuery={debouncedSearch || undefined}
             category={category}
           />
         )}
 
-        {error ? (
+        {isError ? (
           <div className="py-12 text-center">
             <div className="inline-flex flex-col items-center gap-4">
               <div className="rounded-full bg-destructive/10 p-3">
@@ -200,21 +260,21 @@ export function ProductsDashboardView() {
                 <p className="font-semibold text-foreground">
                   Error Loading Products
                 </p>
-                <p className="text-sm text-muted-foreground">{error}</p>
+                <p className="text-sm text-muted-foreground">{error instanceof Error ? error.message : String(error)}</p>
               </div>
             </div>
           </div>
-        ) : products.length === 0 && !loading ? (
+        ) : products.length === 0 && !isFetching ? (
           <EmptyState />
         ) : (
           <ProductGrid
             products={products}
-            loading={loading}
+            loading={isFetching}
             onProductClick={handleProductClick}
           />
         )}
 
-        {!loading && products.length > 0 && totalPages > 1 && (
+        {!isFetching && products.length > 0 && totalPages > 1 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

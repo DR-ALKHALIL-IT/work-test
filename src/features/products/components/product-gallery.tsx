@@ -15,7 +15,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
 
   return (
     <div className="space-y-4">
-      <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
+      <div className="aspect-square overflow-hidden rounded-lg bg-muted">
         <img
           src={images[selectedIndex]}
           alt={`${alt} - Image ${selectedIndex + 1}`}
@@ -32,8 +32,8 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
               className={cn(
                 'aspect-square overflow-hidden rounded-md border-2 transition-all',
                 selectedIndex === index
-                  ? 'border-blue-500 ring-2 ring-blue-500 ring-offset-2'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-primary ring-2 ring-primary ring-offset-2'
+                  : 'border-border hover:border-muted-foreground/50'
               )}
             >
               <img
