@@ -1,39 +1,44 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Container } from '@/components/layout/container'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CartItemRow } from '@/features/cart/components/cart-item-row'
-import { ProductModal } from '@/features/products/components/product-modal'
-import { getCartItems, type CartItem } from '@/features/cart/utils'
+import { useState, useEffect } from "react";
+import { Container } from "@/components/layout/container";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CartItemRow } from "@/features/cart/components/cart-item-row";
+import { ProductModal } from "@/features/products/components/product-modal";
+import { getCartItems, type CartItem } from "@/features/cart/utils";
 
 export default function CartPage() {
-  const [items, setItems] = useState<CartItem[]>([])
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(
+    null,
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    setItems(getCartItems())
+    const list = getCartItems();
+    setItems(Array.isArray(list) ? list : []);
 
     const handleCartUpdate = () => {
-      setItems(getCartItems())
-    }
+      const list = getCartItems();
+      setItems(Array.isArray(list) ? list : []);
+    };
 
-    window.addEventListener('cart-updated', handleCartUpdate)
-    return () => window.removeEventListener('cart-updated', handleCartUpdate)
-  }, [])
+    window.addEventListener("cart-updated", handleCartUpdate);
+    return () => window.removeEventListener("cart-updated", handleCartUpdate);
+  }, []);
 
   const handleRemoveItem = () => {
-    setItems(getCartItems())
-  }
+    const list = getCartItems();
+    setItems(Array.isArray(list) ? list : []);
+  };
 
-  const totalCount = items.reduce((sum, i) => sum + i.quantity, 0)
+  const totalItemsCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   const handleProductClick = (productId: number) => {
-    setSelectedProductId(productId)
-    setIsModalOpen(true)
-  }
+    setSelectedProductId(productId);
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,9 +46,13 @@ export default function CartPage() {
         <div className="space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-2">
-              <h1 className="text-4xl font-bold tracking-tight text-foreground">Shopping Cart</h1>
+              <h1 className="text-4xl font-bold tracking-tight text-foreground">
+                Shopping Cart
+              </h1>
               <p className="text-lg text-muted-foreground">
-                {items.length === 0 ? 'Your cart is empty' : `${totalCount} item${totalCount === 1 ? '' : 's'} in your cart`}
+                {items.length === 0
+                  ? "Your cart is empty"
+                  : `${totalItemsCount} item${totalItemsCount === 1 ? "" : "s"} in your cart`}
               </p>
             </div>
           </div>
@@ -70,8 +79,12 @@ export default function CartPage() {
                     <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
                   </svg>
                 </div>
-                <p className="text-xl font-semibold text-foreground mb-2">Your cart is empty</p>
-                <p className="text-muted-foreground mb-6">Start shopping to add items to your cart</p>
+                <p className="text-xl font-semibold text-foreground mb-2">
+                  Your cart is empty
+                </p>
+                <p className="text-muted-foreground mb-6">
+                  Start shopping to add items to your cart
+                </p>
                 <Button asChild>
                   <a href="/products">Browse Products</a>
                 </Button>
@@ -97,7 +110,7 @@ export default function CartPage() {
                 <div className="mt-6 pt-6 border-t">
                   <div className="flex items-center justify-between text-lg font-semibold">
                     <span>Total Items:</span>
-                    <span>{totalCount}</span>
+                    <span>{totalItemsCount}</span>
                   </div>
                 </div>
               </CardContent>
@@ -112,5 +125,5 @@ export default function CartPage() {
         />
       </Container>
     </div>
-  )
+  );
 }
